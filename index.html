@@ -430,11 +430,12 @@
                             <th>Berat</th>
                             <th>Harga</th>
                             <th>Status</th>
+                            <th>Estimasi Selesai</th>
                             <th style="text-align:center;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="historyBody">
-                        <tr class="empty-row"><td colspan="7">Belum ada data</td></tr>
+                        <tr class="empty-row"><td colspan="8">Belum ada data</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -456,6 +457,7 @@
 
             const GOOGLE_SCRIPT_URL = 'https://api.sheetbest.com/sheets/f2ebd052-424e-4ef8-9982-de5988016c61';
             const ADMIN_PIN = '6455';
+            const ESTIMATED_DAYS = 3; // Ubah di sini jika ingin estimasi berbeda
 
             const PRICE_PER_KG = {
                 'Cuci Kering': 5000,
@@ -536,6 +538,14 @@
                 const m = String(d.getMonth() + 1).padStart(2, '0');
                 const day = String(d.getDate()).padStart(2, '0');
                 return `${y}-${m}-${day}`;
+            }
+
+            // Fungsi Menghitung Estimasi Selesai (3 Hari setelah hari ini)
+            function getEstimatedDate(dateStr) {
+                const dateParts = dateStr.split('-');
+                const d = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                d.setDate(d.getDate() + ESTIMATED_DAYS);
+                return d;
             }
 
             function formatDateDisplay(dateStr) {
@@ -776,7 +786,7 @@
                 rAktif.textContent = aktif;
 
                 if (filtered.length === 0) {
-                    historyBody.innerHTML = `<tr class="empty-row"><td colspan="7">Tidak ada data sesuai filter</td></tr>`;
+                    historyBody.innerHTML = `<tr class="empty-row"><td colspan="8">Tidak ada data sesuai filter</td></tr>`;
                 } else {
                     const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
                     let html = '';
@@ -784,6 +794,10 @@
                         const statusBadge = rec.status === 'masuk' 
                             ? '<span style="color:#b45309; font-weight:700;">🕒 Masuk</span>' 
                             : '<span style="color:#15803d; font-weight:700;">✅ Diambil</span>';
+
+                        // Menghitung estimasi selesai (3 hari)
+                        const estimatedDate = getEstimatedDate(rec.date);
+                        const estimasi = `${estimatedDate.getDate()}/${estimatedDate.getMonth() + 1}/${estimatedDate.getFullYear().toString().slice(2)}`;
                         
                         html += `
                             <tr>
@@ -793,6 +807,7 @@
                                 <td>${rec.berat}${rec.jenis === 'Cuci Sepatu' ? ' Pasang' : ' Kg'}</td>
                                 <td>${formatRupiah(rec.harga)}</td>
                                 <td>${statusBadge}</td>
+                                <td>${estimasi}</td>
                                 <td style="text-align:center; white-space:nowrap;">
                                     <button class="btn-sm btn-info" onclick="window.cetakBonIndex('${rec.date}','${rec.nama}','${rec.harga}')">🧾 Bon</button>
                                     ${rec.status === 'masuk' 
@@ -855,9 +870,9 @@
                 const alamatToko = "Jalan Palbatu 3 No 35";
                 const tanggal = data.date || todayStr();
 
-                const ambilDate = new Date(tanggal);
-                ambilDate.setDate(ambilDate.getDate() + 2);
-                const estimasi = ambilDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                // Hitung estimasi 3 hari
+                const estDate = getEstimatedDate(tanggal);
+                const estimasi = estDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
                 let html = `
                     <div style="text-align: center; font-weight: bold; text-transform: uppercase;">${namaToko}</div>
@@ -898,14 +913,17 @@
                 if (data.length === 0) { showToast('📭 Tidak ada data untuk diexport.', 'info'); return; }
                 try {
                     const rows = [
-                        ['Tanggal', 'Nama', 'No HP', 'Jenis', 'Berat', 'Harga', 'Status', 'Tanggal Ambil']
+                        ['Tanggal', 'Nama', 'No HP', 'Jenis', 'Berat', 'Harga', 'Status', 'Estimasi Selesai', 'Tanggal Ambil']
                     ];
                     data.forEach(rec => {
-                        rows.push([rec.date, rec.nama, rec.hp || '', rec.jenis, rec.berat + (rec.jenis === 'Cuci Sepatu' ? ' Pasang' : ' Kg'), rec.harga, rec.status, rec.tglAmbil || '']);
+                        const estDate = getEstimatedDate(rec.date);
+                        const estimasi = `${estDate.getDate()}/${estDate.getMonth() + 1}/${estDate.getFullYear()}`;
+
+                        rows.push([rec.date, rec.nama, rec.hp || '', rec.jenis, rec.berat + (rec.jenis === 'Cuci Sepatu' ? ' Pasang' : ' Kg'), rec.harga, rec.status, estimasi, rec.tglAmbil || '']);
                     });
                     const wb = XLSX.utils.book_new();
                     const ws = XLSX.utils.aoa_to_sheet(rows);
-                    ws['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+                    ws['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
                     XLSX.utils.book_append_sheet(wb, ws, 'Laundry');
                     XLSX.writeFile(wb, `Laporan_Laundry_${todayStr()}.xlsx`);
                     showToast('📊 Excel berhasil diexport!', 'success', 3000);
