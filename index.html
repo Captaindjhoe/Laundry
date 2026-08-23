@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🧺 Manajemen Laundry</title>
+    <title>🧺 Captain Dezca Laundry</title>
 
     <!-- SheetJS untuk export Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -309,7 +309,7 @@
             <div style="text-align: center; margin-bottom: 15px;">
                 <div style="font-size: 64px;">🧺</div>
             </div>
-            <h2>Laundry Login</h2>
+            <h2>Captain Dezca Laundry</h2>
             <p>Masukkan ID dan PIN Anda</p>
             <input type="text" id="loginInput" placeholder="ID Pengguna" autocomplete="off" />
             <input type="password" id="loginPinInput" maxlength="4" placeholder="PIN 4 digit" inputmode="numeric" />
@@ -322,8 +322,8 @@
     <!-- ─── AREA CETAK STRUK (Tersembunyi) ─── -->
     <div id="printArea">
         <div class="struk-header">
-            LAUNDRY KITA<br>
-            <span style="font-size: 10px; font-weight: normal;">Jl. Contoh No. 123</span>
+            CAPTAIN DEZCA LAUNDRY<br>
+            <span style="font-size: 10px; font-weight: normal;">Jalan Palbatu 3 No 35</span>
         </div>
         <div class="struk-divider"></div>
         <div id="printContent"></div>
@@ -338,8 +338,8 @@
     <!-- ─── DASHBOARD UTAMA ─── -->
     <div class="app" id="appContainer" style="display:none;">
         <header class="header">
-            <h1><span>🧺</span> Manajemen Laundry</h1>
-            <p>Kelola Cucian Anda</p>
+            <h1><span>🧺</span> Captain Dezca Laundry</h1>
+            <p>Jalan Palbatu 3 No 35</p>
             <div class="user-info">
                 <span>👤 <span id="displayUser">-</span></span>
                 <div class="header-controls">
@@ -457,12 +457,11 @@
             const GOOGLE_SCRIPT_URL = 'https://api.sheetbest.com/sheets/f2ebd052-424e-4ef8-9982-de5988016c61';
             const ADMIN_PIN = '6455';
 
-            // ─── HARGA OTOMATIS ───
             const PRICE_PER_KG = {
                 'Cuci Kering': 5000,
                 'Cuci Setrika': 8000,
                 'Cuci Saja': 4000,
-                'Cuci Sepatu': 20000 // per pasang
+                'Cuci Sepatu': 20000
             };
 
             function getGoogleScriptUrl() { return GOOGLE_SCRIPT_URL; }
@@ -667,7 +666,6 @@
                 statPendapatan.textContent = formatRupiah(pendapatanHariIni);
             }
 
-            // ─── OTOMATIS HITUNG HARGA ───
             function autoCalculatePrice() {
                 const jenis = inpJenis.value;
                 const berat = parseFloat(inpBerat.value) || 0;
@@ -853,8 +851,8 @@
             };
 
             function printStruk(data) {
-                const namaToko = "LAUNDRY KITA";
-                const alamatToko = "Jl. Contoh No. 123";
+                const namaToko = "CAPTAIN DEZCA LAUNDRY";
+                const alamatToko = "Jalan Palbatu 3 No 35";
                 const tanggal = data.date || todayStr();
 
                 const ambilDate = new Date(tanggal);
