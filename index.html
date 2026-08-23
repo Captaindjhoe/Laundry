@@ -6,11 +6,11 @@
     <title>🧺 Manajemen Laundry</title>
 
     <!-- SheetJS untuk export Excel -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
-    </script>
-    <!-- Chart.js untuk grafik statistik -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js">
-    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Library QR Code untuk Bon -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         /* ─── CSS Variables ─── */
@@ -132,7 +132,7 @@
         .btn-report:hover { background: #fcd34d; }
 
         .btn-sm {
-            padding: 8px 16px; font-size: 13px; border-radius: 10px; border: none;
+            padding: 8px 10px; font-size: 12px; border-radius: 10px; border: none;
             font-weight: 600; cursor: pointer; transition: all 0.15s ease;
         }
         .btn-sm:active { transform: scale(0.95); }
@@ -142,8 +142,6 @@
         .btn-success:hover { background: #6ee7b7; }
         .btn-info { background: #c7d2fe; color: #3730a3; }
         .btn-info:hover { background: #a5b4fc; }
-        .btn-sync { background: #c7d2fe; color: #3730a3; }
-        .btn-sync:hover { background: #a5b4fc; }
 
         .stats-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -156,8 +154,6 @@
         .stat-card .num { font-size: 22px; font-weight: 700; color: var(--text-primary); }
         .stat-card .label { font-size: 10px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
 
-        .chart-container { position: relative; height: 180px; margin-top: 8px; }
-
         .filter-area {
             display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center;
         }
@@ -168,7 +164,7 @@
         }
 
         .table-wrap { overflow-x: auto; margin-top: 6px; border-radius: 12px; border: 1px solid var(--border-color); }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 380px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 380px; }
         thead { background: var(--bg-table-header); }
         th { padding: 10px 12px; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
         td { padding: 10px 12px; border-top: 1px solid var(--border-color); vertical-align: middle; color: var(--text-primary); }
@@ -218,7 +214,6 @@
         .login-box .btn-login:hover { background: #1fa2a2; }
         .login-box .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Form Input Laundry */
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; font-size: 14px; }
         .form-group input, .form-group select {
@@ -227,7 +222,6 @@
         }
         .form-group input:focus, .form-group select:focus { border-color: #0d6e6e; outline: none; }
 
-        /* Halaman Laporan */
         .report-page {
             display: none; width: 100%; max-width: 700px; margin: 0 auto;
         }
@@ -258,6 +252,58 @@
             .login-box { padding: 24px 16px; }
             .report-summary { grid-template-columns: 1fr 1fr; }
         }
+
+        /* ─── CSS KHUSUS UNTUK CETAK STRUK 58mm ─── */
+        #printArea {
+            display: none;
+            font-family: 'Courier New', Courier, monospace; /* Font monospace standar struk */
+            font-size: 12px;
+            line-height: 1.4;
+            color: #000;
+            width: 58mm; /* Lebar kertas termal 58mm */
+            margin: 0 auto;
+        }
+        #printArea .struk-header {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #printArea .struk-divider {
+            border-top: 1px dashed #000;
+            margin: 8px 0;
+        }
+        #printArea .struk-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        #printArea .struk-qr {
+            text-align: center;
+            margin-top: 10px;
+        }
+        #printArea .struk-qr img {
+            width: 80px;
+            height: 80px;
+        }
+
+        /* Saat mode print, hanya tampilkan struk */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 58mm;
+                margin: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -275,6 +321,22 @@
             <div class="user-list" id="userList"></div>
             <button class="btn-login" id="btnLogin">Login</button>
             <div id="loginError" style="color:#dc2626;font-size:13px;margin-top:8px;"></div>
+        </div>
+    </div>
+
+    <!-- ─── AREA CETAK STRUK (Tersembunyi) ─── -->
+    <div id="printArea">
+        <div class="struk-header">
+            LAUNDRY KITA<br>
+            <span style="font-size: 10px; font-weight: normal;">Jl. Contoh No. 123</span>
+        </div>
+        <div class="struk-divider"></div>
+        <div id="printContent"></div>
+        <div class="struk-divider"></div>
+        <div style="text-align: center; font-size: 10px;">
+            Terima kasih telah menggunakan jasa kami!<br>
+            Simpan struk ini sebagai bukti pengambilan.<br>
+            <span id="printDate"></span>
         </div>
     </div>
 
@@ -373,19 +435,18 @@
                             <th>Berat</th>
                             <th>Harga</th>
                             <th>Status</th>
-                            <th>Tgl Ambil</th>
-                            <th>Aksi</th>
+                            <th style="text-align:center;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="historyBody">
-                        <tr class="empty-row"><td colspan="8">Belum ada data</td></tr>
+                        <tr class="empty-row"><td colspan="7">Belum ada data</td></tr>
                     </tbody>
                 </table>
             </div>
 
             <div style="margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
-                <button class="btn btn-sync btn-sm" id="btnExport">📊 Export Excel</button>
-                <button class="btn btn-danger btn-sm" id="btnResetData">🧹 Reset Data Lokal</button>
+                <button class="btn-sm btn-info" id="btnExport">📊 Export Excel</button>
+                <button class="btn-sm btn-danger" id="btnResetData">🧹 Reset Data Lokal</button>
             </div>
         </div>
     </div>
@@ -398,13 +459,11 @@
         (function() {
             'use strict';
 
-            // ─── KONFIGURASI ───
-            const GOOGLE_SCRIPT_URL = 'https://api.sheetbest.com/sheets/f2ebd052-424e-4ef8-9982-de5988016c61'; // GANTI dengan ID Spreadsheet Anda
+            const GOOGLE_SCRIPT_URL = 'https://api.sheetbest.com/sheets/f2ebd052-424e-4ef8-9982-de5988016c61';
             const ADMIN_PIN = '6455';
 
             function getGoogleScriptUrl() { return GOOGLE_SCRIPT_URL; }
 
-            // ─── DOM refs ───
             const loginOverlay = document.getElementById('loginOverlay');
             const loginInput = document.getElementById('loginInput');
             const loginPinInput = document.getElementById('loginPinInput');
@@ -427,7 +486,6 @@
             const btnResetData = document.getElementById('btnResetData');
             const toast = document.getElementById('toast');
 
-            // Form Input
             const inpNama = document.getElementById('inpNama');
             const inpHP = document.getElementById('inpHP');
             const inpJenis = document.getElementById('inpJenis');
@@ -435,7 +493,6 @@
             const inpHarga = document.getElementById('inpHarga');
             const btnTambah = document.getElementById('btnTambah');
 
-            // Stats
             const statMasuk = document.getElementById('statMasuk');
             const statAktif = document.getElementById('statAktif');
             const statAmbil = document.getElementById('statAmbil');
@@ -444,6 +501,10 @@
             const rTotal = document.getElementById('rTotal');
             const rUang = document.getElementById('rUang');
             const rAktif = document.getElementById('rAktif');
+
+            const printArea = document.getElementById('printArea');
+            const printContent = document.getElementById('printContent');
+            const printDate = document.getElementById('printDate');
 
             let currentUser = null;
             let isAdmin = false;
@@ -494,7 +555,6 @@
                 toastTimer = setTimeout(() => { toast.classList.remove('show'); toastTimer = null; }, duration);
             }
 
-            // ─── Dark Mode ───
             function loadThemePreference() {
                 const saved = localStorage.getItem('laundry_theme');
                 if (saved === 'dark') { document.body.classList.add('dark-mode'); document.getElementById('themeToggle').textContent = '🌙'; }
@@ -506,7 +566,6 @@
                 else { body.classList.add('dark-mode'); toggle.textContent = '🌙'; localStorage.setItem('laundry_theme', 'dark'); }
             }
 
-            // ─── User & PIN management via Cloud (Single Sheet) ───
             async function syncUsersFromCloud() {
                 const url = getGoogleScriptUrl(); 
                 if (!url) return;
@@ -589,7 +648,6 @@
                 renderUserList();
             }
 
-            // ─── Core Logic ───
             function renderUI() {
                 if (!currentUser) return;
                 const data = loadData();
@@ -633,7 +691,6 @@
                 saveData(data);
                 renderUI();
 
-                // Kirim ke Google Sheets
                 const url = getGoogleScriptUrl();
                 try {
                     await fetch(url, {
@@ -660,11 +717,12 @@
                     showToast('✅ Cucian tercatat (sinkronisasi gagal, cek koneksi).', 'info');
                 }
 
-                // Reset Form
+                // Cetak Bon otomatis setelah mencatat
+                printStruk({nama, hp, jenis, berat, harga, date: today});
+
                 inpNama.value = ''; inpHP.value = ''; inpBerat.value = ''; inpHarga.value = '';
             }
 
-            // ─── Halaman Laporan ───
             function goToReport() {
                 appContainer.style.display = 'none';
                 reportPageContainer.classList.add('active');
@@ -691,7 +749,6 @@
                 const data = loadData();
                 const filtered = getFilteredData(data, currentFilters);
 
-                // Summary
                 const total = filtered.length;
                 const uang = filtered.filter(r => r.status === 'diambil').reduce((sum, r) => sum + Number(r.harga || 0), 0);
                 const aktif = filtered.filter(r => r.status === 'masuk').length;
@@ -700,13 +757,12 @@
                 rUang.textContent = formatRupiah(uang);
                 rAktif.textContent = aktif;
 
-                // Table
                 if (filtered.length === 0) {
-                    historyBody.innerHTML = `<tr class="empty-row"><td colspan="8">Tidak ada data sesuai filter</td></tr>`;
+                    historyBody.innerHTML = `<tr class="empty-row"><td colspan="7">Tidak ada data sesuai filter</td></tr>`;
                 } else {
                     const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
                     let html = '';
-                    sorted.forEach((rec, index) => {
+                    sorted.forEach((rec) => {
                         const statusBadge = rec.status === 'masuk' 
                             ? '<span style="color:#b45309; font-weight:700;">🕒 Masuk</span>' 
                             : '<span style="color:#15803d; font-weight:700;">✅ Diambil</span>';
@@ -719,10 +775,10 @@
                                 <td>${rec.berat} Kg</td>
                                 <td>${formatRupiah(rec.harga)}</td>
                                 <td>${statusBadge}</td>
-                                <td>${rec.tglAmbil ? formatDateDisplay(rec.tglAmbil) : '-'}</td>
-                                <td style="text-align:center;">
+                                <td style="text-align:center; white-space:nowrap;">
+                                    <button class="btn-sm btn-info" onclick="window.cetakBonIndex('${rec.date}','${rec.nama}','${rec.harga}')">🧾 Bon</button>
                                     ${rec.status === 'masuk' 
-                                        ? `<button class="btn-sm btn-success" onclick="window.ambilLaundry(${index})">Ambil</button>` 
+                                        ? `<button class="btn-sm btn-success" onclick="window.ambilLaundry('${rec.date}','${rec.nama}','${rec.harga}')">Ambil</button>` 
                                         : ''}
                                 </td>
                             </tr>
@@ -730,15 +786,12 @@
                     });
                     historyBody.innerHTML = html;
                 }
-
-                window._filteredData = filtered;
+                window._allLocalData = loadData();
             }
 
-            // Ambil Laundry
-            window.ambilLaundry = function(index) {
+            window.ambilLaundry = function(date, nama, harga) {
                 const data = loadData();
-                const item = window._filteredData[index];
-                const actualIndex = data.findIndex(r => r.date === item.date && r.nama === item.nama && r.harga === item.harga);
+                const actualIndex = data.findIndex(r => r.date === date && r.nama === nama && r.harga === harga);
 
                 if (actualIndex > -1) {
                     const today = todayStr();
@@ -747,7 +800,6 @@
                     saveData(data);
                     renderReport();
 
-                    // Kirim update ke Google Sheets
                     const url = getGoogleScriptUrl();
                     fetch(url, {
                         method: 'POST',
@@ -774,9 +826,62 @@
                 }
             };
 
-            // Export Excel
+            // Fungsi Cetak Bon dari halaman laporan
+            window.cetakBonIndex = function(date, nama, harga) {
+                const data = window._allLocalData || [];
+                const rec = data.find(r => r.date === date && r.nama === nama && r.harga === harga);
+                if (rec) printStruk(rec);
+            };
+
+            // Fungsi Utama Cetak Struk (58mm)
+            function printStruk(data) {
+                const namaToko = "LAUNDRY KITA"; // Ganti dengan nama toko Anda
+                const alamatToko = "Jl. Contoh No. 123"; // Ganti dengan alamat toko Anda
+                const tanggal = data.date || todayStr();
+
+                // Perkiraan pengambilan (contoh: 2 hari kemudian)
+                const ambilDate = new Date(tanggal);
+                ambilDate.setDate(ambilDate.getDate() + 2);
+                const estimasi = ambilDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+
+                let html = `
+                    <div style="text-align: center; font-weight: bold; text-transform: uppercase;">${namaToko}</div>
+                    <div style="text-align: center; font-size: 10px;">${alamatToko}</div>
+                    <div class="struk-divider"></div>
+                    <div class="struk-row"><span>No. Nota</span><span>${Date.now().toString().slice(-6)}</span></div>
+                    <div class="struk-row"><span>Tanggal</span><span>${formatDateDisplay(tanggal)}</span></div>
+                    <div class="struk-row"><span>Estimasi Ambil</span><span>${estimasi}</span></div>
+                    <div class="struk-divider"></div>
+                    <div class="struk-row"><span>Nama</span><span>${data.nama}</span></div>
+                    <div class="struk-row"><span>No HP</span><span>${data.hp || '-'}</span></div>
+                    <div class="struk-row"><span>Jenis</span><span>${data.jenis}</span></div>
+                    <div class="struk-row"><span>Berat</span><span>${data.berat} Kg</span></div>
+                    <div class="struk-divider"></div>
+                    <div class="struk-row" style="font-weight: bold;"><span>TOTAL</span><span>${formatRupiah(data.harga)}</span></div>
+                    <div class="struk-divider"></div>
+                `;
+
+                printContent.innerHTML = html;
+                printDate.textContent = new Date().toLocaleString('id-ID');
+
+                // Buat QR Code (berisi Nama + No HP sebagai identitas)
+                const qrContainer = document.createElement('div');
+                qrContainer.className = 'struk-qr';
+                new QRCode(qrContainer, {
+                    text: `${data.nama} - ${data.hp}`,
+                    width: 80,
+                    height: 80
+                });
+                printContent.appendChild(qrContainer);
+
+                // Panggil dialog print browser (yang akan mengarahkan ke printer Bluetooth)
+                setTimeout(() => {
+                    window.print();
+                }, 500); // Jeda kecil agar QR selesai dibuat
+            }
+
             function exportExcel() {
-                const data = window._filteredData || [];
+                const data = window._allLocalData || [];
                 if (data.length === 0) { showToast('📭 Tidak ada data untuk diexport.', 'info'); return; }
                 try {
                     const rows = [
@@ -806,7 +911,6 @@
                 showToast('🧹 Data lokal berhasil dihapus.', 'info');
             }
 
-            // ─── Init ───
             function init() {
                 loadThemePreference();
                 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
